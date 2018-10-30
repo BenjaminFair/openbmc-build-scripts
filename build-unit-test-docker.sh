@@ -419,8 +419,10 @@ ninja -C build install
 
 FROM openbmc-base as openbmc-phosphor-dbus-interfaces
 COPY --from=openbmc-sdbusplus ${PREFIX} ${PREFIX}
+COPY dbus-interfaces.patch dbus-interfaces.patch
 RUN curl -L https://github.com/openbmc/phosphor-dbus-interfaces/archive/${PKG_REV['openbmc/phosphor-dbus-interfaces']}.tar.gz | tar -xz && \
 cd phosphor-dbus-interfaces-* && \
+patch -p1 < ../dbus-interfaces.patch && \
 ./bootstrap.sh && \
 ./configure ${CONFIGURE_FLAGS[@]} --enable-openpower-dbus-interfaces --enable-ibm-dbus-interfaces && \
 make -j$(nproc) && \
@@ -502,4 +504,5 @@ if [[ -n "${http_proxy}" ]]; then
 fi
 
 # Build above image
-docker build ${proxy_args} --network=host -t ${DOCKER_IMG_NAME} - <<< "${Dockerfile}"
+echo "${Dockerfile}" > ${WORKSPACE}/"Dockerfile"
+cd ${WORKSPACE} && docker build ${proxy_args} --network=host -t ${DOCKER_IMG_NAME} -f "Dockerfile" ./
